@@ -186,7 +186,8 @@ server <- function(input, output){
             ggtitle(paste("Site No.", input$STAID, siteData()$station_nm)) +
             scale_x_date(limits = as.Date(c(paste0("2018-",input$plotMonths[1], "-01"),
                                             paste0("2018-",input$plotMonths[2], "-30")),
-                                          format = "%Y-%B-%d")) +
+                                          format = "%Y-%B-%d"),
+                         date_labels = "%b %d") +
             scale_linetype_manual(values = c(rep("solid", 12), rep("dashed", 12),
                                              rep("dotdash", 12), rep("twodash", 12),
                                              rep("dotted", 12), rep("4C88C488", 12))) +
