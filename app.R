@@ -5,7 +5,6 @@ library(shinyWidgets); library(RColorBrewer);
 ##TODO:
 ## change to color brewer set1 or dark2
 ## remove 2018 from x axis
-## add station lookup by state
 
 ##format data after downloading
 formatDailyData <- function(df){
@@ -32,30 +31,22 @@ ui <- fluidPage(
         column(4, tabsetPanel(
                       tabPanel("Choose Station",
                                ## get STAID & fetch data
-                            ## drop down list by State
-                            textInput("STAID", label = h3("USGS Station ID"),
-                                      value = "09260050"),
-                            actionButton("fetch", "Get Data"),
-                            helpText("Station IDs can be found",
-                                     a("here.",
-                                       href="https://waterwatch.usgs.gov/?id=ww_current",
-                                       target="_blank"),
-                                     "Leading zeros in Station ID should be included for correct retrieval."),
-                            helpText("Note: Retrieval can be slow for stations",
-                                     "with many years of data."),
-
-                            ## or search by state
-                            h3("or search by State"),
                             selectInput("stateChoice", label = "Select State...",
                                         choices = stateCodes,
                                         selected = "AL"),
                             uiOutput("siteList"),
-                            ##verbatimTextOutput("selectedSite"),
-                            actionButton("fetch2", "Get Data")
+                            actionButton("fetch", "Get Data"),
+                            helpText("A map of streamflow stations can be found",
+                                     a("here.",
+                                       href="https://waterwatch.usgs.gov/?id=ww_current",
+                                       target="_blank")),
+                            helpText("Note: Retrieval can be slow for stations",
+                                     "with many years of data.")
                             ),
                       ## -------------------------------------------------------
                    tabPanel("Graph Settings",
                             ## add log scale to y
+                            h4("Adjust Graph Axes"),
                             checkboxInput("logScaleY",
                                           label = "Log Scale (Vertical Axis)", value = FALSE),
 
@@ -65,10 +56,11 @@ ui <- fluidPage(
                                 label = "Horizontal Axis Range:",
                                 choices = month.name,
                                 selected = month.name[c(1, 12)]),
-
+                            hr(),
+                            h4("Choose which years to plot"),
                             ## choose how to select years
                             selectInput("yearSelection",
-                                        label = "Select years to plot...",
+                                        label = "Select years...",
                                         choices = list("by Chronological Range" = 1,
                                                        "Manually" = 2,
                                                        "by Flow" = 3),
@@ -106,11 +98,11 @@ server <- function(input, output){
 
     ## update data based on new station
     flowData <- eventReactive(input$fetch, {
-        readNWISdv(input$STAID, "00060") %>% formatDailyData(.)
+        readNWISdv(input$siteFromList, "00060") %>% formatDailyData(.)
     })
 
     siteData <- eventReactive(input$fetch, {
-        readNWISsite(input$STAID)
+        readNWISsite(input$siteFromList)
     })
 
     refFlows <- eventReactive(input$updateRefDay, {
@@ -133,14 +125,6 @@ server <- function(input, output){
                     selected = NULL,
                     selectize = TRUE)
     })
-
-    flowData <- eventReactive(input$fetch2, {
-        readNWISdv(input$siteFromList, "00060") %>% formatDailyData(.)
-    })
-    siteData <- eventReactive(input$fetch2, {
-        readNWISsite(input$siteFromList)
-    })
-    output$selectedSite <- renderPrint({ input$siteFromList })
     ## -------------------------------------------------------------------------
     ## create dynamic UI for year selection
     output$yearManual <- renderUI({
