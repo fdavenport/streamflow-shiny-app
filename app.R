@@ -10,7 +10,7 @@ library(shinyWidgets); library(RColorBrewer);
 formatDailyData <- function(df){
   
   df <- df %>% dplyr::rename(flow = X_00060_00003) %>%
-    mutate(flow = replace(flow, which(flow == -999999), 1)) %>%
+    mutate(flow = replace(flow, which(flow == -999999), NA)) %>%
     mutate(DOY = as.Date(strftime(Date, "%m%d"), "%m%d")) %>%
     mutate(DOYchar = strftime(Date, "%m%d")) %>%
     mutate(year = strftime(Date, "%Y")) %>%
