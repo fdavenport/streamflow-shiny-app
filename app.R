@@ -154,7 +154,8 @@ server <- function(input, output){
   })
   ## -------------------------------------------------------------------------
   ##output$testtext <- renderPrint({ refFlows() })
-  output$graph <- renderPlotly({
+  
+  pdata<-reactive({
     if(input$yearSelection == 1){
       ## assign years to print after initially retrieving data
       if(is.null(input$plotRange)){
@@ -176,10 +177,17 @@ server <- function(input, output){
       }
       pdata <- subset(flowData(), year %in% plotYears)
     }
+    pdata
+  })
+  
+  
+  output$graph <- renderPlotly({
+
     ## ---------------------------------------------------------------------
     
     #flexible color palette
     getPalette = colorRampPalette(brewer.pal(12, "Set3"))
+    pdata<-as.data.frame(pdata())
     
     p1 <- ggplot(pdata,
                  aes(DOY, flow, color = year, linetype = year)) +
