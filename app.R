@@ -209,7 +209,7 @@ server <- function(input, output){
       xlab("Day of Year") +
       ylab("Flow (cfs)") +
       theme(legend.position="bottom") +
-      ggtitle(paste("Site No.", input$STAID, siteData()$station_nm)) +
+      ggtitle(paste("Site:",siteData()$station_nm)) +
       scale_x_date(limits = as.Date(c(paste0("2018-",input$plotMonths[1], "-01"),
                                       paste0("2018-",input$plotMonths[2], "-30")),
                                     format = "%Y-%B-%d"),
@@ -227,11 +227,9 @@ server <- function(input, output){
     summary<-as.data.frame(summary())
     
     p2 <- ggplot(summary, aes(DOY,flow))+
-      #geom_line(aes(x=fecha, y=value, colour=variable)) 
       geom_line(aes(group = percentile, linetype=percentile)) +
       scale_linetype_manual(values = c("dotted", "solid", "dotted"))+
       theme_bw() +
-      #theme(legend.position="bottom") +
       xlab("Day of Year") +
       ylab("Flow (cfs)") +
       ggtitle(paste("Median, Q1, Q3 Daily Mean Flows",min(summary$min.year), "-",max(summary$max.year))) +
