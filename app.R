@@ -91,7 +91,8 @@ ui <- fluidPage(
     ## main column/output
     column(8,
            ##verbatimTextOutput("testtext"),
-           plotlyOutput("graph", height = 700))
+           plotlyOutput("graph", height = 300),
+           plotlyOutput("graph2", height = 300))
   )
 )
 ## -----------------------------------------------------------------------------
@@ -180,6 +181,18 @@ server <- function(input, output){
     pdata
   })
   
+  summary<-reactive({
+    pdata<-as.data.frame(pdata())
+    summary<- pdata %>% group_by(DOYchar) %>%
+      summarise(`25%`=quantile(flow, probs=0.25, na.rm = T),
+                `50%`=quantile(flow, probs=0.5, na.rm = T),
+                `75%`=quantile(flow, probs=0.75, na.rm = T),
+                DOY=DOY[1],
+                min.year=min(year),
+                max.year=max(year))
+    summary$DOYchar<-as.integer(summary$DOYchar)
+    summary
+  })
   
   output$graph <- renderPlotly({
 
@@ -209,6 +222,30 @@ server <- function(input, output){
     if(input$logScaleY) p1 <- p1 + scale_y_log10()
     ggplotly(p1, tooltip = c("year", "flow"))
   })
+  output$graph2 <- renderPlotly({
+    
+    summary<-as.data.frame(summary())
+    
+    p2 <- ggplot(summary, aes(DOY))+
+      geom_line(aes(y = summary$`50%`))+
+      geom_line(linetype = "dotted",size=0.5,aes(y = summary$`25%`))+
+      geom_line(linetype= "dotted",size=0.5, aes(y = summary$`75%`))+
+      theme_bw() +
+      #theme(legend.position="bottom") +
+      xlab("Day of Year") +
+      ylab("Flow (cfs)") +
+      ggtitle(paste("Median, Q1, Q3 Daily Mean Flows",min(summary$min.year), "-",max(summary$max.year))) +
+      scale_x_date(limits = as.Date(c(paste0("2018-",input$plotMonths[1], "-01"),
+                                      paste0("2018-",input$plotMonths[2], "-30")),
+                                    format = "%Y-%B-%d"),
+                   date_labels = "%b %d") 
+    
+    if(input$logScaleY) p2 <- p2 + scale_y_log10()
+    ggplotly(p2, tooltip = c("Year"))
+  })
+  
 }
+
+
 
 shinyApp(ui = ui, server = server)
