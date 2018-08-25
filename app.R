@@ -183,14 +183,14 @@ server <- function(input, output){
   
   summary<-reactive({
     pdata<-as.data.frame(pdata())
-    summary<- pdata %>% group_by(DOYchar) %>%
+    summary.wide<- pdata %>% group_by(DOYchar) %>%
       summarise(`25%`=quantile(flow, probs=0.25, na.rm = T),
                 `50%`=quantile(flow, probs=0.5, na.rm = T),
                 `75%`=quantile(flow, probs=0.75, na.rm = T),
                 DOY=DOY[1],
                 min.year=min(year),
                 max.year=max(year))
-    summary$DOYchar<-as.integer(summary$DOYchar)
+    summary <- gather(summary.wide, percentile, flow, '25%':'75%', factor_key=FALSE)
     summary
   })
   
@@ -226,10 +226,10 @@ server <- function(input, output){
     
     summary<-as.data.frame(summary())
     
-    p2 <- ggplot(summary, aes(DOY))+
-      geom_line(aes(y = summary$`50%`))+
-      geom_line(linetype = "dotted",size=0.5,aes(y = summary$`25%`))+
-      geom_line(linetype= "dotted",size=0.5, aes(y = summary$`75%`))+
+    p2 <- ggplot(summary, aes(DOY,flow))+
+      #geom_line(aes(x=fecha, y=value, colour=variable)) 
+      geom_line(aes(group = percentile, linetype=percentile)) +
+      scale_linetype_manual(values = c("dotted", "solid", "dotted"))+
       theme_bw() +
       #theme(legend.position="bottom") +
       xlab("Day of Year") +
@@ -241,7 +241,7 @@ server <- function(input, output){
                    date_labels = "%b %d") 
     
     if(input$logScaleY) p2 <- p2 + scale_y_log10()
-    ggplotly(p2, tooltip = c("Year"))
+    ggplotly(p2, tooltip = c("percentile", "flow"))
   })
   
 }
