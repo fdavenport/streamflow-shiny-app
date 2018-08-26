@@ -1,6 +1,6 @@
 library(shiny); library(dplyr); library(ggplot2);
 library(plotly); library(dataRetrieval); library(tidyr);
-library(shinyWidgets); library(RColorBrewer);
+library(shinyWidgets); library(RColorBrewer);library(leaflet)
 
 ##TODO:
 ## change to color brewer set1 or dark2
@@ -37,6 +37,7 @@ ui <- fluidPage(
                            selected = "AL"),
                uiOutput("siteList"),
                actionButton("fetch", "Get Data"),
+               leafletOutput("mymap"),
                helpText("A map of streamflow stations can be found",
                         a("here.",
                           href="https://waterwatch.usgs.gov/?id=ww_current",
@@ -240,6 +241,14 @@ server <- function(input, output){
     
     if(input$logScaleY) p2 <- p2 + scale_y_log10()
     ggplotly(p2, tooltip = c("percentile", "flow"))
+  })
+  
+  ##--------------------------------------------------------------------
+  output$mymap <- renderLeaflet({
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldImagery) %>%
+      addMarkers(lng=siteData()$dec_long_va, lat=siteData()$dec_lat_va, popup=siteData()$station_nm)
+      
   })
   
 }
