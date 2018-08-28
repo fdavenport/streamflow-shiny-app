@@ -36,14 +36,14 @@ ui <- fluidPage(
                            choices = stateCodes,
                            selected = "AL"),
                uiOutput("siteList"),
-               actionButton("fetch", "Get Data"),
-               leafletOutput("mymap"),
                helpText("A map of streamflow stations can be found",
                         a("here.",
                           href="https://waterwatch.usgs.gov/?id=ww_current",
                           target="_blank")),
+               actionButton("fetch", "Get Data"),     
                helpText("Note: Retrieval can be slow for stations",
-                        "with many years of data.")
+                        "with many years of data."), 
+               leafletOutput("mymap")
       ),
       ## -------------------------------------------------------
       tabPanel("Graph Settings",
