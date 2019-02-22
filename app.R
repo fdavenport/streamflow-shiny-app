@@ -4,7 +4,7 @@ library(shinyWidgets); library(RColorBrewer);
 
 ##TODO:
 ## change to color brewer set1 or dark2
-## remove 2018 from x axis
+## Note about only displaying up to 72 years of data
 
 ##format data after downloading
 formatDailyData <- function(df){
@@ -23,6 +23,7 @@ formatStateData <- function(df){
 }
 stateCodes <- lapply(1:50, function(x) state.abb[x])
 names(stateCodes) <- state.abb
+currentYear <- strftime(Sys.Date(), "%Y")
 ## -----------------------------------------------------------------------------
 ui <- fluidPage(
     titlePanel("Streamflow Visualizer!"),
@@ -184,8 +185,8 @@ server <- function(input, output){
             ylab("Flow (cfs)") +
             theme(legend.position="bottom") +
             ggtitle(paste("Site No.", input$STAID, siteData()$station_nm)) +
-            scale_x_date(limits = as.Date(c(paste0("2018-",input$plotMonths[1], "-01"),
-                                            paste0("2018-",input$plotMonths[2], "-30")),
+            scale_x_date(limits = as.Date(c(paste0(currentYear, "-",input$plotMonths[1], "-01"),
+                                            paste0(currentYear, "-",input$plotMonths[2], "-30")),
                                           format = "%Y-%B-%d"),
                          date_labels = "%b %d") +
             scale_linetype_manual(values = c(rep("solid", 12), rep("dashed", 12),
@@ -202,19 +203,3 @@ server <- function(input, output){
 
 shinyApp(ui = ui, server = server)
 ## -----------------------------------------------------------------------------
-
-##Old Code: Server
-    ##yearsByFlow <- eventReactive(input$updateRefDay, {
-    ##    wideDF <- flowData() %>%
-    ##        dplyr::select(-DOY, -Date, -X_00060_00003_cd) %>%
-    ##        spread(DOYchar, flow)
-    ##    wideDF[order(wideDF[,gsub("-", "", input$refDay)]),"year"]
-    ##})
-    ##output$rankRange <- renderUI({
-        ## select years by rank range
-    ##    sliderInput("rankRange", label = "Low Flow ----------------------- High Flow ",
-    ##                min = 1,
-    ##                max = length(unique(flowData()$year)),
-    ##                value = c(1, length(unique(flowData()$year))),
-    ##                step = 1)
-    ##})
