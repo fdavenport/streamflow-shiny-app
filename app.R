@@ -4,7 +4,7 @@ library(shinyWidgets); library(RColorBrewer);library(leaflet)
 
 ##TODO:
 ## change to color brewer set1 or dark2
-## remove 2018 from x axis
+## Note about only displaying up to 72 years of data
 
 ##format data after downloading
 formatDailyData <- function(df){
@@ -24,6 +24,7 @@ formatStateData <- function(df){
 }
 stateCodes <- lapply(1:50, function(x) state.abb[x])
 names(stateCodes) <- state.abb
+currentYear <- strftime(Sys.Date(), "%Y")
 ## -----------------------------------------------------------------------------
 ui <- fluidPage(
   titlePanel("Streamflow Visualizer!"),
@@ -251,8 +252,85 @@ server <- function(input, output){
       
   })
   
+
+    output$siteList <- renderUI({
+        selectInput("siteFromList", "Search by Site ID or Name",
+                    choices = stateSites(),
+                    selected = NULL,
+                    selectize = TRUE)
+    })
+    ## -------------------------------------------------------------------------
+    ## create dynamic UI for year selection
+    output$yearManual <- renderUI({
+        ## select years manually
+        checkboxGroupInput("plotYears", "",
+                           min(flowData()$year):max(flowData()$year),
+                           selected =  min(flowData()$year):max(flowData()$year))
+        ## add select all/deselect all
+    })
+    output$yearRange <- renderUI({
+        ## select years by range
+        sliderInput("plotRange",
+                    label = "",
+                    min = as.numeric(min(flowData()$year)),
+                    max = as.numeric(max(flowData()$year)),
+                    value = c(min(flowData()$year), max(flowData()$year)),
+                    sep="")
+    })
+    output$flowSlider <- renderUI({
+        ## select years by flow range
+        sliderInput("flowRange", label = "Select Flow range (cfs) on Reference Date:",
+                    min = min(refFlows(), na.rm = TRUE),
+                    max = max(refFlows(), na.rm = TRUE),
+                    value = c(min(refFlows(), na.rm = TRUE), max(refFlows(), na.rm = TRUE)),
+                    step = 10)
+    })
+    ## -------------------------------------------------------------------------
+    ##output$testtext <- renderPrint({ refFlows() })
+    output$graph <- renderPlotly({
+        if(input$yearSelection == 1){
+            ## assign years to print after initially retrieving data
+            if(is.null(input$plotRange)){
+                plotYears <- min(flowData()$year):max(flowData()$year)
+            } else {
+                plotYears <- input$plotRange[1]:input$plotRange[2]
+            }
+            pdata <- subset(flowData(), year %in% plotYears)
+        } else if(input$yearSelection == 2){
+            pdata <- subset(flowData(), year %in% input$plotYears)
+        } else if(input$yearSelection == 3){
+            if(is.null(input$flowRange)){
+                ##plotYears <- min(flowData()$year):max(flowData()$year)
+                plotYears <- 1990:2017
+            } else {
+                yrs <- min(flowData()$year):max(flowData()$year)
+                ind <- which(refFlows() >= input$flowRange[1] & refFlows() <= input$flowRange[2])
+                plotYears <- yrs[ind]
+            }
+            pdata <- subset(flowData(), year %in% plotYears)
+        }
+        ## ---------------------------------------------------------------------
+        p1 <- ggplot(pdata,
+                     aes(DOY, flow, color = year, linetype = year)) +
+            geom_line(aes(group = year3)) +
+            theme_bw() +
+            xlab("Day of Year") +
+            ylab("Flow (cfs)") +
+            theme(legend.position="bottom") +
+            ggtitle(paste("Site No.", input$STAID, siteData()$station_nm)) +
+            scale_x_date(limits = as.Date(c(paste0(currentYear, "-",input$plotMonths[1], "-01"),
+                                            paste0(currentYear, "-",input$plotMonths[2], "-30")),
+                                          format = "%Y-%B-%d"),
+                         date_labels = "%b %d") +
+            scale_linetype_manual(values = c(rep("solid", 12), rep("dashed", 12),
+                                             rep("dotdash", 12), rep("twodash", 12),
+                                             rep("dotted", 12), rep("4C88C488", 12))) +
+            scale_color_manual(values = c(brewer.pal(12, "Set3"), brewer.pal(12, "Set3"),
+                                          brewer.pal(12, "Set3"), brewer.pal(12, "Set3"),
+                                          brewer.pal(12, "Set3"),  brewer.pal(12, "Set3")))
 }
 
 
 
 shinyApp(ui = ui, server = server)
+
